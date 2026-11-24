@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}Subject Difficulty Analysis | Student Result Analyzer{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6 w-full">
+
+  <!-- Header -->
+  <section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-[11px] uppercase tracking-widest text-primary font-bold">Curriculum Analytics</span>
+        <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+        <span class="text-[11px] text-secondary">Statistical Difficulty Modeling</span>
+      </div>
+      <h1 class="font-headline-lg text-2xl md:text-3xl font-bold text-on-surface tracking-tight">Subject Performance & Difficulty Analysis</h1>
+      <p class="text-xs md:text-sm text-secondary mt-1 max-w-2xl">
+        In-depth course evaluation using NumPy variance, standard deviation (\(\sigma\)), clearance margins, and analytical difficulty classification.
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'export_report_pdf' %}?type=subjects{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center gap-1.5 bg-primary-container text-white px-3.5 py-2 rounded-lg text-xs font-bold hover:bg-primary transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">insights</span>
+        <span>Download Subject PDF</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Important Analytical Disclaimer Alert (Required by Prompt) -->
+  <section class="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex items-start gap-3 text-xs text-secondary">
+    <span class="material-symbols-outlined text-[20px] text-primary">psychology</span>
+    <div>
+      <span class="font-bold text-on-surface">Analytical Indicator Note:</span>
+      The difficulty classification (<span class="text-emerald-700 font-semibold">Easy</span>, <span class="text-secondary font-semibold">Moderate</span>, <span class="text-error font-semibold">Difficult</span>) is an <em>analytical statistical indicator</em> derived from empirical student cohort performance metrics. It does not represent an absolute or definitive measurement of subject academic rigor.
+    </div>
+  </section>
+
+  <!-- Subject Metrics Table -->
+  <section class="bg-surface-container-lowest rounded-2xl border border-surface-container-high p-6 shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">assessment</span>
+        <h3 class="text-sm font-bold text-on-surface">Subject-wise Statistical Matrix</h3>
+      </div>
+      <span class="text-xs text-secondary font-mono">{{ subjects|length }} Subjects Evaluated</span>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl border border-surface-container-high">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-surface-container-low text-secondary uppercase font-bold text-[10px] tracking-wider">
+          <tr>
+            <th class="p-3">Subject Code</th>
+            <th class="p-3">Subject Title</th>
+            <th class="p-3 text-center">Class Avg</th>
+            <th class="p-3 text-center">Pass %</th>
+            <th class="p-3 text-center">Fail %</th>
+            <th class="p-3 text-center">Highest</th>
+            <th class="p-3 text-center">Lowest</th>
+            <th class="p-3 text-center">Std Dev (\(\sigma\))</th>
+            <th class="p-3 text-center">Difficulty Class</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-container-high text-secondary">
+          {% for s in subjects %}
+          <tr class="hover:bg-surface-container-low/50">
+            <td class="p-3 font-mono font-bold text-primary">{{ s.subject_code }}</td>
+            <td class="p-3 font-semibold text-on-surface">{{ s.subject_name }}</td>
+            <td class="p-3 text-center font-mono font-bold text-on-surface">{{ s.average_marks }}</td>
+            <td class="p-3 text-center font-mono font-bold text-tertiary">{{ s.pass_percentage }}%</td>
+            <td class="p-3 text-center font-mono font-bold text-error">{{ s.fail_percentage }}%</td>
+            <td class="p-3 text-center font-mono font-semibold">{{ s.highest_marks }}</td>
+            <td class="p-3 text-center font-mono font-semibold">{{ s.lowest_marks }}</td>
+            <td class="p-3 text-center font-mono font-bold text-primary">{{ s.standard_deviation }}</td>
+            <td class="p-3 text-center">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border {{ s.difficulty_badge_class }}">
+                {{ s.difficulty }}
+              </span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="p-6 text-center text-secondary">No subject marks found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Subject Deep-Dive Cards Grid -->
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for s in subjects %}
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-container-high p-5 shadow-sm flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-mono text-xs font-bold text-primary">{{ s.subject_code }}</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border {{ s.difficulty_badge_class }}">
+            {{ s.difficulty }}
+          </span>
+        </div>
+        <h4 class="text-sm font-bold text-on-surface">{{ s.subject_name }}</h4>
+        
+        <!-- Progress bar for Pass Rate -->
+        <div class="mt-4">
+          <div class="flex justify-between text-[11px] text-secondary mb-1">
+            <span>Pass Clearance Rate</span>
+            <span class="font-bold text-on-surface">{{ s.pass_percentage }}%</span>
+          </div>
+          <div class="w-full h-2 rounded-full bg-surface-container-high overflow-hidden">
+            <div class="h-full bg-on-tertiary-container rounded-full" style="width: {{ s.pass_percentage }}%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-surface-container-high text-center">
+        <div class="p-2 rounded-lg bg-surface-container-low">
+          <span class="text-[9px] uppercase font-bold text-secondary">Avg Marks</span>
+          <div class="text-xs font-bold font-mono text-on-surface mt-0.5">{{ s.average_marks }}</div>
+        </div>
+        <div class="p-2 rounded-lg bg-surface-container-low">
+          <span class="text-[9px] uppercase font-bold text-secondary">Peak</span>
+          <div class="text-xs font-bold font-mono text-amber-700 mt-0.5">{{ s.highest_marks }}</div>
+        </div>
+        <div class="p-2 rounded-lg bg-surface-container-low">
+          <span class="text-[9px] uppercase font-bold text-secondary">Std Dev</span>
+          <div class="text-xs font-bold font-mono text-primary mt-0.5">{{ s.standard_deviation }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- Classification Configuration Parameters Callout -->
+  <section class="bg-surface-container-lowest rounded-2xl border border-surface-container-high p-6 shadow-sm">
+    <h3 class="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary text-[20px]">tune</span>
+      <span>Configurable Classification Criteria</span>
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+      <div class="p-3 rounded-xl bg-tertiary-container/10 border border-tertiary/20">
+        <div class="font-bold text-tertiary mb-1">Easy Classification</div>
+        <p class="text-secondary">Class Average \(\ge 70\%\) and Pass Percentage \(\ge 80\%\). Indicates high overall student mastery.</p>
+      </div>
+      <div class="p-3 rounded-xl bg-secondary-container/30 border border-secondary/20">
+        <div class="font-bold text-secondary mb-1">Moderate Classification</div>
+        <p class="text-secondary">Class Average \(\ge 50\%\) and Pass Percentage \(\ge 60\%\). Balanced performance matching curricular expectation.</p>
+      </div>
+      <div class="p-3 rounded-xl bg-error-container/30 border border-error/20">
+        <div class="font-bold text-error mb-1">Difficult Classification</div>
+        <p class="text-secondary">Class Average \(< 50\%\) or Pass Percentage \(< 60\%\). Recommends curriculum review or remedial assistance.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

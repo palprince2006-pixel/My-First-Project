@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Student Results Ledger | Student Result Analyzer{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6 w-full">
+
+  <!-- Page Header (Stitch Design) -->
+  <section class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+    <div class="flex flex-col gap-1">
+      <div class="flex items-center gap-2 flex-wrap text-xs">
+        <span class="uppercase tracking-wider text-outline font-bold text-[11px]">Academic Registrar Ledger</span>
+        <span class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary font-bold text-[11px]">
+          {{ students|length }} Students Evaluated
+        </span>
+        <span class="px-2.5 py-0.5 rounded-full bg-tertiary-container/20 text-on-tertiary-container font-semibold text-[11px] flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container animate-pulse"></span>
+          Audit Ready
+        </span>
+      </div>
+      <h1 class="font-headline-lg text-2xl md:text-3xl font-bold text-on-surface tracking-tight">Student Results Directory</h1>
+      <p class="text-xs md:text-sm text-secondary max-w-2xl">
+        Complete individual student score ledger, subject mark breakdowns, percentage, dynamic rankings, and academic standing metrics.
+      </p>
+    </div>
+
+    <!-- Export & Batch Print Actions -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <a href="{% url 'export_report_csv' %}?type=students_ledger{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center gap-1.5 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface px-3.5 py-2 rounded-lg text-xs font-semibold border border-surface-container-high transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[16px] text-secondary">table_view</span>
+        <span>Export CSV</span>
+      </a>
+      <a href="{% url 'export_report_pdf' %}?type=students_ledger{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center gap-1.5 bg-primary-container text-white hover:bg-primary px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">print</span>
+        <span>Download Marks Ledger PDF</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Filter & Control Toolbar -->
+  <section class="bg-surface-container-lowest p-4 rounded-2xl border border-surface-container-high shadow-sm">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+      {% if current_exam %}<input type="hidden" name="exam_id" value="{{ current_exam.id }}"/>{% endif %}
+
+      <!-- Search Input -->
+      <div class="md:col-span-5 relative">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">manage_search</span>
+        <input name="search" value="{{ search_query }}" class="w-full h-10 pl-9 pr-3 bg-surface-container-low rounded-lg text-xs text-on-surface placeholder:text-outline border border-surface-container-high focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Search by Roll No or Student Name..." type="text"/>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="md:col-span-2 relative">
+        <select name="status" onchange="this.form.submit()" class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-xs font-semibold text-on-surface border border-surface-container-high focus:outline-none cursor-pointer">
+          <option value="">All Statuses</option>
+          <option value="Passed" {% if status_filter == 'Passed' %}selected{% endif %}>Passed Only</option>
+          <option value="Failed" {% if status_filter == 'Failed' %}selected{% endif %}>Failed Only</option>
+        </select>
+      </div>
+
+      <!-- Grade Filter -->
+      <div class="md:col-span-2 relative">
+        <select name="grade" onchange="this.form.submit()" class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-xs font-semibold text-on-surface border border-surface-container-high focus:outline-none cursor-pointer">
+          <option value="">All Grades</option>
+          <option value="O" {% if grade_filter == 'O' %}selected{% endif %}>O (Outstanding)</option>
+          <option value="A+" {% if grade_filter == 'A+' %}selected{% endif %}>A+ (Excellent)</option>
+          <option value="A" {% if grade_filter == 'A' %}selected{% endif %}>A (Very Good)</option>
+          <option value="B+" {% if grade_filter == 'B+' %}selected{% endif %}>B+ (Good)</option>
+          <option value="B" {% if grade_filter == 'B' %}selected{% endif %}>B (Above Avg)</option>
+          <option value="C" {% if grade_filter == 'C' %}selected{% endif %}>C (Pass)</option>
+          <option value="F" {% if grade_filter == 'F' %}selected{% endif %}>F (Fail)</option>
+        </select>
+      </div>
+
+      <!-- Sort By -->
+      <div class="md:col-span-3 relative">
+        <select name="sort" onchange="this.form.submit()" class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-xs font-semibold text-on-surface border border-surface-container-high focus:outline-none cursor-pointer">
+          <option value="rank" {% if sort_by == 'rank' %}selected{% endif %}>Sort by: Rank (High to Low)</option>
+          <option value="percentage_desc" {% if sort_by == 'percentage_desc' %}selected{% endif %}>Percentage (High to Low)</option>
+          <option value="percentage_asc" {% if sort_by == 'percentage_asc' %}selected{% endif %}>Percentage (Low to High)</option>
+          <option value="roll" {% if sort_by == 'roll' %}selected{% endif %}>Roll Number (Ascending)</option>
+          <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Student Name (A-Z)</option>
+        </select>
+      </div>
+    </form>
+  </section>
+
+  <!-- Master Results Ledger Table -->
+  <section class="bg-surface-container-lowest rounded-2xl border border-surface-container-high shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-surface-container-low text-secondary uppercase font-bold text-[10px] tracking-wider border-b border-surface-container-high">
+          <tr>
+            <th class="p-3 text-center">Rank</th>
+            <th class="p-3">Roll No</th>
+            <th class="p-3">Student Name</th>
+            {% for subj in subjects %}
+            <th class="p-3 text-center">{{ subj.subject_name }}</th>
+            {% endfor %}
+            <th class="p-3 text-right">Total Marks</th>
+            <th class="p-3 text-right">Percentage</th>
+            <th class="p-3 text-center">Grade</th>
+            <th class="p-3 text-center">Status</th>
+            <th class="p-3 text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-container-high text-secondary">
+          {% for s in students %}
+          <tr class="hover:bg-surface-container-low/60 transition-colors">
+            <!-- Rank Badge -->
+            <td class="p-3 text-center">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold {% if s.rank == 1 %}bg-amber-100 text-amber-800 border border-amber-300{% elif s.rank == 2 %}bg-slate-200 text-slate-800{% elif s.rank == 3 %}bg-amber-50 text-amber-700{% else %}bg-surface-container-high text-secondary{% endif %}">
+                #{{ s.rank }}
+              </span>
+            </td>
+
+            <!-- Roll Number -->
+            <td class="p-3 font-mono font-bold text-primary">{{ s.roll_number }}</td>
+
+            <!-- Student Name -->
+            <td class="p-3 font-semibold text-on-surface whitespace-nowrap">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-surface-container-high text-[10px] font-bold text-primary flex items-center justify-center">
+                  {{ s.student_name|slice:":1" }}
+                </span>
+                <span>{{ s.student_name }}</span>
+              </div>
+            </td>
+
+            <!-- Subject-wise Marks -->
+            {% for subj in subjects %}
+            <td class="p-3 text-center font-mono font-semibold">
+              <span class="{% if s.marks|dict_key:subj.subject_code < subj.passing_marks %}text-error font-bold{% else %}text-on-surface{% endif %}">
+                {{ s.marks|dict_key:subj.subject_code|default:"-" }}
+              </span>
+            </td>
+            {% endfor %}
+
+            <!-- Total Marks -->
+            <td class="p-3 text-right font-mono font-bold text-on-surface">{{ s.total_marks }}</td>
+
+            <!-- Percentage -->
+            <td class="p-3 text-right font-mono font-bold text-primary">{{ s.percentage }}%</td>
+
+            <!-- Grade Badge -->
+            <td class="p-3 text-center">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold {% if s.grade == 'O' or s.grade == 'A+' %}bg-emerald-100 text-emerald-800{% elif s.grade == 'A' or s.grade == 'B+' %}bg-blue-100 text-blue-800{% elif s.grade == 'B' or s.grade == 'C' %}bg-amber-100 text-amber-800{% else %}bg-error-container text-on-error-container{% endif %}">
+                {{ s.grade }}
+              </span>
+            </td>
+
+            <!-- Status Badge -->
+            <td class="p-3 text-center">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider {% if s.status == 'Passed' %}bg-tertiary-container/20 text-on-tertiary-container{% else %}bg-error-container text-on-error-container{% endif %}">
+                {{ s.status }}
+              </span>
+            </td>
+
+            <!-- Action -->
+            <td class="p-3 text-center">
+              <button onclick="openStudentModal('{{ s.student_id }}', '{{ s.student_name|escapejs }}', '{{ s.roll_number|escapejs }}', '{{ s.total_marks }}', '{{ s.percentage }}', '{{ s.grade }}', '{{ s.rank }}', '{{ s.status }}')" class="p-1.5 rounded-lg text-primary hover:bg-surface-container-high transition-colors" title="View Student Report Card">
+                <span class="material-symbols-outlined text-[18px]">badge</span>
+              </button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="12" class="p-8 text-center text-secondary">
+              <div class="flex flex-col items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[36px] text-outline">search_off</span>
+                <span class="text-sm font-semibold">No students match your filter criteria.</span>
+                <a href="{% url 'student_results' %}" class="text-xs text-primary underline">Clear filters</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<!-- Student Report Card Modal -->
+<div id="studentModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-surface-container-lowest rounded-2xl max-w-lg w-full p-6 border border-surface-container-high shadow-2xl relative animate-in fade-in">
+    <div class="flex items-center justify-between pb-4 border-b border-surface-container-high">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-[24px]">school</span>
+        <h3 class="text-base font-bold text-on-surface">Student Marksheet Card</h3>
+      </div>
+      <button onclick="closeStudentModal()" class="text-secondary hover:text-on-surface">&times;</button>
+    </div>
+
+    <div class="py-4 flex flex-col gap-4 text-xs">
+      <div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-surface-container-high">
+        <div>
+          <h4 class="text-sm font-bold text-on-surface" id="modalStudentName">-</h4>
+          <span class="font-mono text-primary font-semibold" id="modalRollNumber">-</span>
+        </div>
+        <div class="text-right">
+          <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase" id="modalStatus">-</span>
+          <div class="text-xs font-bold text-primary mt-1" id="modalRank">-</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high">
+          <span class="text-[10px] text-secondary uppercase font-bold">Total Marks</span>
+          <div class="text-base font-bold font-mono text-on-surface mt-1" id="modalTotal">-</div>
+        </div>
+        <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high">
+          <span class="text-[10px] text-secondary uppercase font-bold">Percentage</span>
+          <div class="text-base font-bold font-mono text-primary mt-1" id="modalPercentage">-</div>
+        </div>
+        <div class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high">
+          <span class="text-[10px] text-secondary uppercase font-bold">Letter Grade</span>
+          <div class="text-base font-bold font-mono text-on-tertiary-container mt-1" id="modalGrade">-</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pt-4 border-t border-surface-container-high flex justify-end gap-2">
+      <button onclick="closeStudentModal()" class="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface text-xs font-semibold">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openStudentModal(id, name, roll, total, pct, grade, rank, status) {
+    document.getElementById('modalStudentName').textContent = name;
+    document.getElementById('modalRollNumber').textContent = roll;
+    document.getElementById('modalTotal').textContent = total;
+    document.getElementById('modalPercentage').textContent = pct + '%';
+    document.getElementById('modalGrade').textContent = grade;
+    document.getElementById('modalRank').textContent = 'Class Rank: #' + rank;
+    
+    const statusEl = document.getElementById('modalStatus');
+    statusEl.textContent = status;
+    if (status === 'Passed') {
+      statusEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-tertiary-container/20 text-on-tertiary-container';
+    } else {
+      statusEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-error-container text-on-error-container';
+    }
+
+    document.getElementById('studentModal').classList.remove('hidden');
+  }
+
+  function closeStudentModal() {
+    document.getElementById('studentModal').classList.add('hidden');
+  }
+</script>
+{% endblock %}

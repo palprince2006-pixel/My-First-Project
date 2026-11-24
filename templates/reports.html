@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Institutional Reports & Exports | Student Result Analyzer{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6 w-full">
+
+  <!-- Header -->
+  <section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-[11px] uppercase tracking-widest text-primary font-bold">Academic Registrar</span>
+        <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+        <span class="text-[11px] text-secondary">Institutional Records Export</span>
+      </div>
+      <h1 class="font-headline-lg text-2xl md:text-3xl font-bold text-on-surface tracking-tight">Academic Reports & Data Export Center</h1>
+      <p class="text-xs md:text-sm text-secondary mt-1 max-w-2xl">
+        Generate and export compliant academic marksheets, institutional summaries, curriculum difficulty assessments, and topper records in CSV and PDF formats.
+      </p>
+    </div>
+  </section>
+
+  <!-- Report Types Grid -->
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <!-- Card 1: Overall Class Performance Report -->
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-container-high p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+      <div>
+        <div class="w-10 h-10 rounded-xl bg-primary-fixed text-primary flex items-center justify-center mb-4">
+          <span class="material-symbols-outlined text-[24px]">school</span>
+        </div>
+        <h3 class="text-sm font-bold text-on-surface">Overall Class Performance</h3>
+        <p class="text-xs text-secondary mt-1">
+          Executive summary including class average, pass/fail percentage, median, highest/lowest scores, and standard deviation.
+        </p>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-surface-container-high flex flex-col gap-2">
+        <a href="{% url 'export_report_pdf' %}?type=class_summary{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary-container hover:bg-primary text-white text-xs font-bold transition-all shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+          <span>Download PDF Report</span>
+        </a>
+        <a href="{% url 'export_report_csv' %}?type=class_summary{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-surface-container-high transition-all">
+          <span class="material-symbols-outlined text-[16px] text-secondary">table_view</span>
+          <span>Download CSV Data</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 2: Student Performance Marks Ledger -->
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-container-high p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+      <div>
+        <div class="w-10 h-10 rounded-xl bg-surface-container-high text-primary flex items-center justify-center mb-4">
+          <span class="material-symbols-outlined text-[24px]">format_list_bulleted</span>
+        </div>
+        <h3 class="text-sm font-bold text-on-surface">Student Performance Ledger</h3>
+        <p class="text-xs text-secondary mt-1">
+          Detailed marks breakdown for every student: roll number, name, subject scores, total, percentage, grade, status, and rank.
+        </p>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-surface-container-high flex flex-col gap-2">
+        <a href="{% url 'export_report_pdf' %}?type=students_ledger{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary-container hover:bg-primary text-white text-xs font-bold transition-all shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+          <span>Download PDF Report</span>
+        </a>
+        <a href="{% url 'export_report_csv' %}?type=students_ledger{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-surface-container-high transition-all">
+          <span class="material-symbols-outlined text-[16px] text-secondary">table_view</span>
+          <span>Download CSV Data</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 3: Subject-wise Analysis Report -->
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-container-high p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+      <div>
+        <div class="w-10 h-10 rounded-xl bg-tertiary-container/20 text-on-tertiary-container flex items-center justify-center mb-4">
+          <span class="material-symbols-outlined text-[24px]">insights</span>
+        </div>
+        <h3 class="text-sm font-bold text-on-surface">Subject-wise Analysis Report</h3>
+        <p class="text-xs text-secondary mt-1">
+          Curriculum analytics per subject: average score, clearance percentage, failure rate, peak/low scores, std dev, and difficulty class.
+        </p>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-surface-container-high flex flex-col gap-2">
+        <a href="{% url 'export_report_pdf' %}?type=subjects{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary-container hover:bg-primary text-white text-xs font-bold transition-all shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+          <span>Download PDF Report</span>
+        </a>
+        <a href="{% url 'export_report_csv' %}?type=subjects{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-surface-container-high transition-all">
+          <span class="material-symbols-outlined text-[16px] text-secondary">table_view</span>
+          <span>Download CSV Data</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 4: Topper & Merit Report -->
+    <div class="bg-surface-container-lowest rounded-2xl border border-surface-container-high p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+      <div>
+        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mb-4">
+          <span class="material-symbols-outlined text-[24px]">military_tech</span>
+        </div>
+        <h3 class="text-sm font-bold text-on-surface">Topper & Distinction Report</h3>
+        <p class="text-xs text-secondary mt-1">
+          Honor roll including overall class toppers, top 10 ranked candidates, and subject-wise record holders with tied marks resolution.
+        </p>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-surface-container-high flex flex-col gap-2">
+        <a href="{% url 'export_report_pdf' %}?type=toppers{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary-container hover:bg-primary text-white text-xs font-bold transition-all shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+          <span>Download PDF Report</span>
+        </a>
+        <a href="{% url 'export_report_csv' %}?type=toppers{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-surface-container-high transition-all">
+          <span class="material-symbols-outlined text-[16px] text-secondary">table_view</span>
+          <span>Download CSV Data</span>
+        </a>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Live Report Data Preview Section -->
+  <section class="bg-surface-container-lowest rounded-2xl border border-surface-container-high p-6 shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">visibility</span>
+        <h3 class="text-sm font-bold text-on-surface">Current Term Executive Summary Preview</h3>
+      </div>
+      <span class="text-xs text-secondary">Exam: {{ current_exam.exam_name|default:"General" }}</span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-surface-container-low border border-surface-container-high text-center">
+      <div>
+        <span class="text-[10px] text-secondary uppercase font-bold">Total Enrolled</span>
+        <div class="text-xl font-bold font-headline-lg text-on-surface mt-1">{{ kpis.total_students }}</div>
+      </div>
+      <div>
+        <span class="text-[10px] text-secondary uppercase font-bold">Pass Clearance</span>
+        <div class="text-xl font-bold font-headline-lg text-tertiary mt-1">{{ kpis.pass_percentage }}%</div>
+      </div>
+      <div>
+        <span class="text-[10px] text-secondary uppercase font-bold">Class Average</span>
+        <div class="text-xl font-bold font-headline-lg text-primary mt-1">{{ kpis.class_average_pct }}%</div>
+      </div>
+      <div>
+        <span class="text-[10px] text-secondary uppercase font-bold">Std Deviation</span>
+        <div class="text-xl font-bold font-headline-lg text-secondary mt-1">{{ kpis.std_deviation }}</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

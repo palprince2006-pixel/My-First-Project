@@ -1,0 +1,449 @@
+{% extends 'base.html' %}
+
+{% block title %}Academic Dashboard | Student Result Analyzer{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6 w-full">
+
+  <!-- Welcome & Academic Operational Header (Stitch Design) -->
+  <section class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-surface-container-lowest p-6 rounded-2xl border border-surface-container-high shadow-sm relative overflow-hidden">
+    <div class="flex flex-col gap-1 z-10">
+      <div class="flex items-center gap-2 text-on-tertiary-container text-xs font-semibold">
+        <span class="inline-block w-2 h-2 rounded-full bg-on-tertiary-container animate-pulse"></span>
+        <span>ACADEMIC ANALYTICS SESSION ACTIVE</span>
+        <span class="text-outline-variant">•</span>
+        <span class="font-mono text-secondary">TERM: {% if current_exam %}{{ current_exam.academic_year }} ({{ current_exam.semester }}){% else %}N/A{% endif %}</span>
+      </div>
+      <h1 class="font-headline-lg text-2xl md:text-3xl font-bold text-on-surface tracking-tight">Academic Overview & Performance Insights</h1>
+      <p class="text-xs md:text-sm text-secondary">
+        Department of {{ current_exam.department|default:"Computer Science & Engineering" }} • Evaluated using NumPy & Pandas Statistical Engine
+      </p>
+    </div>
+
+    <!-- Quick Action Deck -->
+    <div class="flex flex-wrap items-center gap-2.5 z-10">
+      <div class="flex items-center bg-surface-container-low px-3 py-1.5 rounded-lg border border-surface-container-high text-xs">
+        <span class="material-symbols-outlined text-secondary text-[16px] mr-1.5">school</span>
+        <div class="flex flex-col">
+          <span class="text-[9px] uppercase font-bold text-outline">Cohort</span>
+          <span class="font-semibold text-primary">{% if current_exam %}{{ current_exam.academic_year }}{% else %}2024-25{% endif %}</span>
+        </div>
+      </div>
+
+      <a href="{% url 'upload_results' %}" class="flex items-center gap-1.5 bg-surface-container-high hover:bg-surface-variant text-on-surface px-3.5 py-2 rounded-lg text-xs font-semibold transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[18px] text-primary">upload_file</span>
+        <span>Upload Dataset</span>
+      </a>
+
+      <a href="{% url 'export_report_pdf' %}?type=class_summary{% if current_exam %}&exam_id={{ current_exam.id }}{% endif %}" class="flex items-center gap-1.5 bg-primary-container text-white hover:bg-primary px-3.5 py-2 rounded-lg text-xs font-semibold transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+        <span>Download Class PDF</span>
+      </a>
+    </div>
+
+    <!-- Academic Watermark Decoration -->
+    <div class="absolute -right-6 -bottom-8 opacity-5 pointer-events-none select-none">
+      <span class="material-symbols-outlined text-[180px] text-primary">analytics</span>
+    </div>
+  </section>
+
+  <!-- Key Institutional KPI Statistics Cards (Module 1) -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <!-- KPI 1: Total Students -->
+    <div class="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Total Students</span>
+        <span class="w-7 h-7 rounded-lg bg-primary-fixed flex items-center justify-center text-primary text-[14px]">
+          <span class="material-symbols-outlined text-[16px]">groups</span>
+        </span>
+      </div>
+      <div class="mt-3">
+        <div class="text-2xl font-bold font-headline-lg text-on-surface">{{ kpis.total_students }}</div>
+        <p class="text-[11px] text-secondary mt-1">Enrolled in active exam</p>
+      </div>
+    </div>
+
+    <!-- KPI 2: Class Average -->
+    <div class="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Class Average</span>
+        <span class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+          <span class="material-symbols-outlined text-[16px]">trending_up</span>
+        </span>
+      </div>
+      <div class="mt-3">
+        <div class="text-2xl font-bold font-headline-lg text-primary">{{ kpis.class_average_pct }}%</div>
+        <p class="text-[11px] text-secondary mt-1">Mean score across subjects</p>
+      </div>
+    </div>
+
+    <!-- KPI 3: Pass Percentage -->
+    <div class="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Pass Percentage</span>
+        <span class="w-7 h-7 rounded-lg bg-tertiary-container/20 flex items-center justify-center text-on-tertiary-container">
+          <span class="material-symbols-outlined text-[16px]">verified</span>
+        </span>
+      </div>
+      <div class="mt-3">
+        <div class="text-2xl font-bold font-headline-lg text-on-tertiary-container">{{ kpis.pass_percentage }}%</div>
+        <p class="text-[11px] text-secondary mt-1">{{ kpis.passed_students }} students cleared</p>
+      </div>
+    </div>
+
+    <!-- KPI 4: Highest Marks -->
+    <div class="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Highest Marks</span>
+        <span class="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700">
+          <span class="material-symbols-outlined text-[16px]">trophy</span>
+        </span>
+      </div>
+      <div class="mt-3">
+        <div class="text-2xl font-bold font-headline-lg text-amber-700">{{ kpis.highest_total_marks }}</div>
+        <p class="text-[11px] text-secondary mt-1">{{ kpis.highest_percentage }}% Top aggregate</p>
+      </div>
+    </div>
+
+    <!-- KPI 5: Lowest Marks -->
+    <div class="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Lowest Marks</span>
+        <span class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+          <span class="material-symbols-outlined text-[16px]">arrow_downward</span>
+        </span>
+      </div>
+      <div class="mt-3">
+        <div class="text-2xl font-bold font-headline-lg text-secondary">{{ kpis.lowest_total_marks }}</div>
+        <p class="text-[11px] text-secondary mt-1">{{ kpis.lowest_percentage }}% Minimum score</p>
+      </div>
+    </div>
+
+    <!-- KPI 6: Failed Students -->
+    <div class="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm hover:shadow-md transition-shadow">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Failed Students</span>
+        <span class="w-7 h-7 rounded-lg bg-error-container flex items-center justify-center text-error">
+          <span class="material-symbols-outlined text-[16px]">warning</span>
+        </span>
+      </div>
+      <div class="mt-3">
+        <div class="text-2xl font-bold font-headline-lg text-error">{{ kpis.failed_students }}</div>
+        <p class="text-[11px] text-secondary mt-1">Requires remedial action</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- NumPy Statistical Insight Pill -->
+  <section class="bg-surface-container-low p-4 rounded-xl border border-surface-container-high flex flex-wrap items-center justify-between gap-4 text-xs">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-primary"></span>
+      <span class="font-bold text-on-surface">NumPy Statistical Calculations:</span>
+      <span class="text-secondary">Median Percentage:</span>
+      <span class="font-bold text-primary">{{ kpis.median_percentage }}%</span>
+      <span class="text-outline-variant">•</span>
+      <span class="text-secondary">Standard Deviation (\(\sigma\)):</span>
+      <span class="font-bold text-primary">{{ kpis.std_deviation }}</span>
+      <span class="text-outline-variant">•</span>
+      <span class="text-secondary">Assessed Subjects:</span>
+      <span class="font-bold text-primary">{{ kpis.total_subjects }}</span>
+    </div>
+    <div class="text-[11px] text-outline font-mono">
+      Computed dynamically from SQLite database via NumPy 2.4 / Pandas 3.0
+    </div>
+  </section>
+
+  <!-- Module 6: Data Visualization Grid (5 Chart.js Charts) -->
+  <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Chart 1: Subject-wise Average Marks (Bar Chart) -->
+    <div class="lg:col-span-8 bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm flex flex-col justify-between">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-sm font-bold text-on-surface">Subject-wise Average Marks</h2>
+          <p class="text-xs text-secondary">Mean score per academic course compared to passing standard (40)</p>
+        </div>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-surface-container-high text-secondary font-semibold">Bar Chart</span>
+      </div>
+      <div class="relative h-64 w-full">
+        <canvas id="subjectAverageChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 2: Pass vs Fail (Doughnut Chart) -->
+    <div class="lg:col-span-4 bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm flex flex-col justify-between">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-sm font-bold text-on-surface">Pass vs Fail Ratio</h2>
+          <p class="text-xs text-secondary">Cohort clearance proportion</p>
+        </div>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-surface-container-high text-secondary font-semibold">Doughnut</span>
+      </div>
+      <div class="relative h-64 w-full flex items-center justify-center">
+        <canvas id="passFailChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 3: Student Performance Distribution (Bar Chart) -->
+    <div class="lg:col-span-6 bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-sm font-bold text-on-surface">Performance Distribution</h2>
+          <p class="text-xs text-secondary">Student cohort count grouped into percentage brackets</p>
+        </div>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-surface-container-high text-secondary font-semibold">Distribution</span>
+      </div>
+      <div class="relative h-60 w-full">
+        <canvas id="performanceDistributionChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 4: Grade Distribution (Pie Chart) -->
+    <div class="lg:col-span-6 bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-sm font-bold text-on-surface">Letter Grade Breakdown</h2>
+          <p class="text-xs text-secondary">Institutional grade spread (O, A+, A, B+, B, C, F)</p>
+        </div>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-surface-container-high text-secondary font-semibold">Pie Chart</span>
+      </div>
+      <div class="relative h-60 w-full flex items-center justify-center">
+        <canvas id="gradeDistributionChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 5: Subject Comparison (Horizontal Bar Chart) -->
+    <div class="lg:col-span-12 bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-sm font-bold text-on-surface">Subject Performance & Clearance Comparison</h2>
+          <p class="text-xs text-secondary">Pass percentage vs failure percentage across all evaluated subjects</p>
+        </div>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-surface-container-high text-secondary font-semibold">Horizontal Bar</span>
+      </div>
+      <div class="relative h-64 w-full">
+        <canvas id="subjectComparisonChart"></canvas>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Bottom Analytics Deck: Topper Showcase & Subject Difficulty Brief -->
+  <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Top 3 Students Leaderboard Preview -->
+    <div class="lg:col-span-6 bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-amber-600">military_tech</span>
+          <h2 class="text-sm font-bold text-on-surface">Topper Leaderboard Preview</h2>
+        </div>
+        <a href="{% url 'topper_analysis' %}" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+          <span>View All Rankings</span>
+          <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+        </a>
+      </div>
+
+      {% if toppers.top_5_students %}
+      <div class="flex flex-col gap-3">
+        {% for t in toppers.top_5_students|slice:":3" %}
+        <div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-primary/30 transition-colors">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs {% if t.rank == 1 %}bg-amber-100 text-amber-800 border border-amber-300{% elif t.rank == 2 %}bg-slate-200 text-slate-800{% else %}bg-amber-50 text-amber-700{% endif %}">
+              #{{ t.rank }}
+            </div>
+            <div>
+              <div class="text-xs font-bold text-on-surface">{{ t.student_name }}</div>
+              <div class="text-[11px] text-secondary font-mono">{{ t.roll_number }} • Grade: {{ t.grade }}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-sm font-bold text-primary">{{ t.percentage }}%</div>
+            <div class="text-[11px] text-secondary">{{ t.total_marks }} pts</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-xs text-secondary py-4 text-center">No student marks available for this exam term.</p>
+      {% endif %}
+    </div>
+
+    <!-- Subject Difficulty Quick Summary -->
+    <div class="lg:col-span-6 bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">insights</span>
+          <h2 class="text-sm font-bold text-on-surface">Subject Difficulty Indicators</h2>
+        </div>
+        <a href="{% url 'subject_analysis' %}" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+          <span>Detailed Subject Matrix</span>
+          <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+        </a>
+      </div>
+
+      {% if subjects %}
+      <div class="flex flex-col gap-3">
+        {% for s in subjects|slice:":4" %}
+        <div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-surface-container-high">
+          <div>
+            <div class="text-xs font-bold text-on-surface">{{ s.subject_name }}</div>
+            <div class="text-[11px] text-secondary">
+              Avg: <strong>{{ s.average_marks }}</strong> • Pass Rate: <strong>{{ s.pass_percentage }}%</strong> • \(\sigma\): {{ s.standard_deviation }}
+            </div>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full font-semibold border {{ s.difficulty_badge_class }}">
+            {{ s.difficulty }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-xs text-secondary py-4 text-center">No subjects recorded yet.</p>
+      {% endif %}
+    </div>
+
+  </section>
+
+</div>
+
+<!-- Real-time Chart.js Initialization Script -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    fetch("{% url 'chart_data_api' %}{% if current_exam %}?exam_id={{ current_exam.id }}{% endif %}")
+      .then(res => res.json())
+      .then(data => {
+        // Chart 1: Subject-wise Averages (Bar)
+        new Chart(document.getElementById('subjectAverageChart'), {
+          type: 'bar',
+          data: {
+            labels: data.chart1_subject_averages.labels,
+            datasets: [
+              {
+                label: 'Class Average',
+                data: data.chart1_subject_averages.averages,
+                backgroundColor: 'rgba(30, 58, 138, 0.85)',
+                borderColor: '#1e3a8a',
+                borderWidth: 1,
+                borderRadius: 6,
+              },
+              {
+                label: 'Passing Benchmark (40)',
+                data: data.chart1_subject_averages.passing_marks,
+                type: 'line',
+                borderColor: '#ba1a1a',
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false,
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true, max: 100 }
+            }
+          }
+        });
+
+        // Chart 2: Pass vs Fail (Doughnut)
+        new Chart(document.getElementById('passFailChart'), {
+          type: 'doughnut',
+          data: {
+            labels: data.chart2_pass_fail.labels,
+            datasets: [{
+              data: data.chart2_pass_fail.data,
+              backgroundColor: ['#27c38a', '#ba1a1a'],
+              borderWidth: 2,
+              borderColor: '#ffffff',
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+
+        // Chart 3: Performance Distribution (Bar)
+        new Chart(document.getElementById('performanceDistributionChart'), {
+          type: 'bar',
+          data: {
+            labels: data.chart3_performance_distribution.labels,
+            datasets: [{
+              label: 'Number of Students',
+              data: data.chart3_performance_distribution.data,
+              backgroundColor: '#4059aa',
+              borderRadius: 6,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+          }
+        });
+
+        // Chart 4: Grade Distribution (Pie)
+        new Chart(document.getElementById('gradeDistributionChart'), {
+          type: 'pie',
+          data: {
+            labels: data.chart4_grade_distribution.labels,
+            datasets: [{
+              data: data.chart4_grade_distribution.data,
+              backgroundColor: [
+                '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#f59e0b', '#ec4899', '#ef4444'
+              ],
+              borderWidth: 1,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'right' }
+            }
+          }
+        });
+
+        // Chart 5: Subject Comparison (Horizontal Bar)
+        new Chart(document.getElementById('subjectComparisonChart'), {
+          type: 'bar',
+          data: {
+            labels: data.chart5_subject_comparison.labels,
+            datasets: [
+              {
+                label: 'Pass %',
+                data: data.chart5_subject_comparison.pass_percentages,
+                backgroundColor: '#27c38a',
+                borderRadius: 4,
+              },
+              {
+                label: 'Fail %',
+                data: data.chart5_subject_comparison.fail_percentages,
+                backgroundColor: '#ffdad6',
+                borderColor: '#ba1a1a',
+                borderWidth: 1,
+                borderRadius: 4,
+              }
+            ]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { beginAtZero: true, max: 100 }
+            }
+          }
+        });
+      })
+      .catch(err => console.error("Error loading chart data:", err));
+  });
+</script>
+{% endblock %}
